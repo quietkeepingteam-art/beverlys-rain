@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Beverly’s Rain</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Beverly’s Rain">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#e8edf2; --bg2:#d3dde8; --surface:#f6f8fa; --line:#c3cfdb;
+  --text:#1c2733; --muted:#5b6b7c; --accent:#d99a3a; --accent-ink:#2a1a05;
+  --danger:#a23b3b; --rain:rgba(70,100,140,.42); --glow:rgba(217,154,58,.38);
+  --serif:"Fraunces",Georgia,"Times New Roman",serif;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0c1320; --bg2:#182640; --surface:#142033; --line:#26364f;
+    --text:#edf1f7; --muted:#9aabc1; --accent:#f0b25e; --accent-ink:#2a1a05;
+    --danger:#f19a9a; --rain:rgba(170,200,240,.42); --glow:rgba(240,178,94,.38);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0c1320; --bg2:#182640; --surface:#142033; --line:#26364f;
+  --text:#edf1f7; --muted:#9aabc1; --accent:#f0b25e; --accent-ink:#2a1a05;
+  --danger:#f19a9a; --rain:rgba(170,200,240,.42); --glow:rgba(240,178,94,.38);
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{height:100%;background:linear-gradient(180deg,var(--bg2),var(--bg)) fixed;color:var(--text);
+  -webkit-text-size-adjust:100%;font-family:var(--sans)}
+body{margin:0;height:100%;background:transparent;overflow:hidden}
+button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+
+/* ---------- rain streaks ---------- */
+.rain{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.rain i{position:absolute;top:-140px;width:1.5px;border-radius:2px;
+  background:linear-gradient(to bottom,transparent,var(--rain));
+  animation:fall linear infinite;will-change:transform}
+@keyframes fall{to{transform:translateY(calc(100vh + 240px))}}
+
+/* ---------- home ---------- */
+#home{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:24px}
+#home main{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:34px}
+h1{font-family:var(--serif);font-weight:300;font-size:clamp(2.4rem,10vw,3.6rem);line-height:1.1;margin:0;
+  letter-spacing:.005em}
+#start{width:min(56vw,236px);aspect-ratio:1;border-radius:50%;border:0;background:var(--accent);color:var(--accent-ink);
+  display:grid;place-items:center;
+  box-shadow:0 0 0 16px var(--glow),0 0 90px 10px var(--glow);
+  animation:breathe 5s ease-in-out infinite}
+#start:active{transform:scale(.97)}
+#start svg{width:38%;height:38%}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
+.begin{font-family:var(--serif);font-style:italic;font-weight:300;font-size:1.25rem;color:var(--muted);margin:0}
+#gear{position:absolute;z-index:2;top:calc(14px + env(safe-area-inset-top,0px));right:14px;width:48px;height:48px;
+  border-radius:50%;border:0;background:transparent;color:var(--muted);opacity:.55;display:grid;place-items:center;
+  -webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:none}
+#gear svg{width:24px;height:24px;transition:transform .2s,opacity .2s}
+#gear.holding{opacity:1}
+#gear.holding svg{transform:rotate(70deg) scale(1.3);transition:transform .9s linear}
+.foot{position:absolute;z-index:1;left:0;right:0;bottom:calc(18px + env(safe-area-inset-bottom,0px));margin:0;
+  font-size:.82rem;color:var(--muted);opacity:.7}
+
+/* ---------- stage (playback) ---------- */
+#stage{position:fixed;inset:0;z-index:20;background:linear-gradient(180deg,#182640,#0a0f19);overflow:hidden}
+#stage .rain i{background:linear-gradient(to bottom,transparent,rgba(190,215,245,.4))}
+.slide{position:absolute;inset:0;opacity:0;transition:opacity 1.8s ease}
+.slide.on{opacity:1}
+.slide .bg{position:absolute;inset:-6%;background-size:cover;background-position:center;filter:blur(30px) brightness(.5)}
+.slide img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.slide.on img{animation:drift var(--drift,14s) ease-out both}
+@keyframes drift{from{transform:scale(1)}to{transform:scale(1.05)}}
+#controls{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:20px;
+  padding:24px 24px calc(30px + env(safe-area-inset-bottom,0px));
+  background:linear-gradient(transparent 50%,rgba(0,0,0,.72));color:#fff;opacity:0;pointer-events:none;transition:opacity .45s}
+#controls.show{opacity:1;pointer-events:auto}
+#nowTitle{margin:0;font-family:var(--serif);font-style:italic;font-weight:300;font-size:1.2rem;text-align:center;
+  max-width:88%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-height:1.4em}
+.ctl-row{display:flex;align-items:flex-end;justify-content:center;gap:34px}
+.ctl{display:flex;flex-direction:column;align-items:center;gap:8px;background:none;border:0;color:#fff;font-size:.9rem}
+.ctl span.disc{display:grid;place-items:center;width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.16);
+  border:1px solid rgba(255,255,255,.28)}
+.ctl.main span.disc{width:92px;height:92px;background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.ctl svg{width:28px;height:28px}
+.ctl.main svg{width:40px;height:40px}
+
+#quote{position:absolute;left:0;right:0;bottom:0;padding:70px 28px calc(40px + env(safe-area-inset-bottom,0px));
+  text-align:center;color:#fff;pointer-events:none;opacity:0;transition:opacity .9s ease;
+  background:linear-gradient(transparent,rgba(0,0,0,.62))}
+#quote.on{opacity:1}
+#stage:has(#controls.show) #quote{opacity:0}
+#quoteText{margin:0 auto;max-width:34ch;font-family:var(--serif);font-style:italic;font-weight:300;
+  font-size:clamp(1.3rem,5.2vw,1.9rem);line-height:1.35;text-shadow:0 1px 14px rgba(0,0,0,.7)}
+
+/* ---------- setup ---------- */
+#setup{position:fixed;inset:0;z-index:30;background:var(--bg);color:var(--text);overflow-y:auto;-webkit-overflow-scrolling:touch}
+.bar{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;align-items:center;
+  padding:calc(12px + env(safe-area-inset-top,0px)) 20px 12px;background:var(--bg);border-bottom:1px solid var(--line)}
+.bar h2{font-family:var(--serif);font-weight:400;font-size:1.6rem;margin:0}
+.wrap{max-width:640px;margin:0 auto;padding:8px 20px calc(60px + env(safe-area-inset-bottom,0px))}
+.note{color:var(--muted);font-size:.95rem;line-height:1.5;margin:14px 0 6px}
+section.blk{padding:22px 0;border-bottom:1px solid var(--line)}
+section.blk:last-of-type{border-bottom:0}
+section.blk h3{font-family:var(--serif);font-weight:400;font-size:1.35rem;margin:0 0 4px;display:flex;align-items:baseline;gap:10px}
+.count{font-family:var(--sans);font-size:.85rem;color:var(--muted)}
+.help{margin:0 0 14px;color:var(--muted);font-size:.95rem;line-height:1.45}
+.btn{position:relative;display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 24px;
+  border-radius:999px;background:var(--accent);color:var(--accent-ink);border:0;font-weight:600;font-size:1rem;overflow:hidden}
+.btn.quiet{background:transparent;color:var(--text);border:1px solid var(--line);min-height:44px}
+.btn input{position:absolute;inset:0;width:100%;height:100%;opacity:0;font-size:0;cursor:pointer}
+.linkbtn{background:none;border:0;color:var(--muted);text-decoration:underline;font-size:.88rem;padding:10px 4px}
+.list{list-style:none;margin:12px 0 0;padding:0}
+.row{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line)}
+.nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ib{flex:none;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--text);
+  display:grid;place-items:center;padding:0}
+.ib:disabled{opacity:.3}
+.ib svg{width:16px;height:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px;margin-top:14px}
+figure{margin:0;position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;background:var(--line)}
+figure img{width:100%;height:100%;object-fit:cover;display:block}
+figure .ib{position:absolute;top:5px;right:5px;width:30px;height:30px;background:rgba(0,0,0,.6);color:#fff;border:0}
+.empty{color:var(--muted);margin:12px 0 0;font-size:.95rem}
+.field{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:16px}
+.field input[type=range]{flex:1;max-width:260px;accent-color:var(--accent)}
+.field.col{flex-direction:column;align-items:stretch;gap:8px}
+.field textarea{font:inherit;font-size:16px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--text);resize:vertical}
+.field select{font:inherit;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--text)}
+.field input[type=checkbox]{width:26px;height:26px;accent-color:var(--accent)}
+.tips{margin:0;padding-left:20px;color:var(--muted);line-height:1.6;font-size:.95rem}
+#toast{position:fixed;z-index:40;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);
+  background:var(--text);color:var(--bg);padding:12px 18px;border-radius:999px;font-size:.95rem;max-width:90%;text-align:center}
+@media (prefers-reduced-motion: reduce){
+  .rain i{animation:none;opacity:.25}
+  #start{animation:none}
+  .slide{transition:none}
+  .slide.on img{animation:none}
+}
+</style>
+</head>
+<body>
+
+<div id="home">
+  <div class="rain" aria-hidden="true"></div>
+  <button id="gear" aria-label="Setup. Press and hold to open.">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+  </button>
+  <main>
+    <h1>Beverly’s Rain</h1>
+    <button id="start" aria-label="Begin">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.5c0 0 6.5 7.3 6.5 12a6.5 6.5 0 0 1-13 0c0-4.7 6.5-12 6.5-12z"/></svg>
+    </button>
+    <p class="begin">Tap to begin</p>
+  </main>
+  <p class="foot">Press and hold the gear to add photos and music</p>
+</div>
+
+<div id="stage" hidden>
+  <div class="rain" aria-hidden="true"></div>
+  <div class="slide" id="slideA"><div class="bg"></div><img alt=""></div>
+  <div class="slide" id="slideB"><div class="bg"></div><img alt=""></div>
+  <div id="quote" aria-live="off"><p id="quoteText"></p></div>
+  <div id="controls">
+    <p id="nowTitle"></p>
+    <div class="ctl-row">
+      <button class="ctl" id="btnStop"><span class="disc"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg></span>Stop</button>
+      <button class="ctl main" id="btnPause"><span class="disc" id="pauseDisc"></span><span id="pauseLbl">Pause</span></button>
+      <button class="ctl" id="btnNext"><span class="disc"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 5v14l9.5-7zM17 5h2.5v14H17z"/></svg></span>Next</button>
+    </div>
+  </div>
+</div>
+
+<div id="setup" hidden>
+  <div class="bar"><h2>Setup</h2><button class="btn" id="btnDone">Done</button></div>
+  <div class="wrap">
+    <p class="note">Files in the media folders (listed in library.js) show up here automatically. Anything you add with the buttons below is saved on this device only.</p>
+    <div id="sections"></div>
+    <section class="blk" id="options">
+      <h3>Options</h3>
+      <label class="field">Seconds per photo
+        <select id="secs"><option>6</option><option>8</option><option>10</option><option>15</option><option>20</option><option>30</option></select>
+      </label>
+      <label class="field">Shuffle songs <input type="checkbox" id="shuf"></label>
+      <label class="field">Show quotes while a song plays <input type="checkbox" id="showq"></label>
+      <label class="field col">Your own quotes, one per line. They are mixed in with the built-in ones.
+        <textarea id="customq" rows="4" placeholder="Type a line you want her to see"></textarea></label>
+    </section>
+    <section class="blk">
+      <h3>Setting up an iPhone</h3>
+      <ul class="tips">
+        <li>Open this page in Safari, tap Share, then Add to Home Screen.</li>
+        <li>If you add files with the buttons here, do it from the Home Screen icon. The icon and Safari keep separate storage. Files in the media folders are not affected.</li>
+        <li>In Settings, Display &amp; Brightness, set Auto-Lock to Never.</li>
+        <li>Make sure the ringer switch on the side is not set to silent.</li>
+      </ul>
+    </section>
+    <p class="note" id="dbnote" hidden>Saving is not available in this browser mode. Anything you add will disappear when the page closes.</p>
+  </div>
+</div>
+<div id="toast" hidden></div>
+
+<script src="library.js"></script>
+<script>
+(function(){
+'use strict';
+var $=function(s){return document.querySelector(s)};
+var MAX=10;
+var SILENT='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+var KINDS=['photo','song','clip','rain'];
+var SECTIONS=[
+ {kind:'photo',title:'Photos',help:'Each song shows up to 10 of these, chosen at random, as a slideshow that repeats.',btn:'Add photos',accept:'image/*'},
+ {kind:'song',title:'Songs',help:'Played one after another, then back to the first. Use the arrows to change the order.',btn:'Add songs',accept:'audio/*,.mp3,.m4a'},
+ {kind:'clip',title:'Audio clips',help:'One is chosen at random and plays right before each song.',btn:'Add clips',accept:'audio/*,.mp3,.m4a'},
+ {kind:'rain',title:'Rain sounds',help:'One is chosen at random and loops softly underneath everything.',btn:'Add rain sounds',accept:'audio/*,.mp3,.m4a'}
+];
+
+/* ---------- files from the media folders (listed in library.js) ---------- */
+function segEnc(p){return String(p).split('/').map(encodeURIComponent).join('/')}
+function nameOf(p){var n=String(p).split('/').pop();try{n=decodeURIComponent(n)}catch(e){}return n.replace(/\.[^.]+$/,'')}
+function libItems(kind){
+  var L=window.BR_LIBRARY||{},arr=({photo:L.photos,song:L.songs,clip:L.clips,rain:L.rain})[kind]||[];
+  return arr.map(function(p,i){return {id:'lib-'+kind+'-'+i,kind:kind,name:nameOf(p),url:segEnc(p),lib:true,type:'',t:-1e15+i}});
+}
+
+/* ---------- small helpers ---------- */
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function pick(a){return a[Math.floor(Math.random()*a.length)]}
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
+var PATHS={
+ play:'<path d="M8 5v14l11-7z"/>',
+ stop:'<rect x="6" y="6" width="12" height="12" rx="2"/>',
+ pause:'<path d="M7 5h4v14H7zM13 5h4v14h-4z"/>',
+ up:'<path d="M12 7l7 9H5z"/>',
+ down:'<path d="M12 17l-7-9h14z"/>',
+ x:'<path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" fill="none"/>'
+};
+function ic(n,s){return '<svg viewBox="0 0 24 24" fill="currentColor" width="'+s+'" height="'+s+'" aria-hidden="true">'+PATHS[n]+'</svg>'}
+var toastT=null;
+function toast(msg,ms){var t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(function(){t.hidden=true},ms||4500)}
+function errText(e){return e?((e.name||'Error')+(e.message?': '+e.message:'')):'unknown error'}
+
+/* ---------- settings ---------- */
+var S={rain:0.35,secs:10,shuffle:false,songOrder:[],quotes:true,custom:''};
+try{var raw=localStorage.getItem('beverlys-rain-settings');if(raw)Object.assign(S,JSON.parse(raw))}catch(e){}
+function saveS(){try{localStorage.setItem('beverlys-rain-settings',JSON.stringify(S))}catch(e){}}
+
+/* ---------- reading files ---------- */
+function readBuf(b){
+  return new Promise(function(res,rej){
+    var fr=new FileReader();
+    fr.onload=function(){res(fr.result)};
+    fr.onerror=function(){rej(fr.error||new Error('The file could not be read'))};
+    fr.readAsArrayBuffer(b);
+  });
+}
+function readURL(b){
+  return new Promise(function(res,rej){
+    var fr=new FileReader();
+    fr.onload=function(){res(fr.result)};
+    fr.onerror=function(){rej(fr.error||new Error('The file could not be read'))};
+    fr.readAsDataURL(b);
+  });
+}
+function bufDataURL(buf,type){return readURL(new Blob([buf],{type:type||'application/octet-stream'}))}
+function mimeOf(f){
+  if(f.type)return f.type;
+  var m=/\.([a-z0-9]+)$/i.exec(f.name||''),e=m?m[1].toLowerCase():'';
+  return ({mp3:'audio/mpeg',m4a:'audio/mp4',aac:'audio/aac',wav:'audio/wav',ogg:'audio/ogg',flac:'audio/flac'})[e]||'';
+}
+
+/* ---------- storage: IndexedDB (details + data in separate stores), memory fallback ---------- */
+var db=null,mem=[],memN=-1,tick=0,memUsed=false;
+function openDB(){
+  return new Promise(function(res){
+    try{
+      var r=indexedDB.open('beverlys-rain',2);
+      r.onupgradeneeded=function(){
+        var d=r.result;
+        if(!d.objectStoreNames.contains('items')){var s=d.createObjectStore('items',{keyPath:'id',autoIncrement:true});s.createIndex('kind','kind')}
+        if(!d.objectStoreNames.contains('data'))d.createObjectStore('data',{keyPath:'id'});
+      };
+      r.onsuccess=function(){db=r.result;res(true)};
+      r.onerror=function(){res(false)};
+      r.onblocked=function(){res(false)};
+    }catch(e){res(false)}
+  });
+}
+function idbAdd(meta,buf){
+  return new Promise(function(res,rej){
+    var t=db.transaction(['items','data'],'readwrite'),id=null;
+    var r=t.objectStore('items').add(meta);
+    r.onsuccess=function(){id=r.result;t.objectStore('data').put({id:id,buf:buf})};
+    t.oncomplete=function(){res(id)};
+    t.onerror=function(){rej(t.error)};
+    t.onabort=function(){rej(t.error||new Error('Saving was interrupted'))};
+  });
+}
+async function dbAdd(meta,buf){
+  meta.t=Date.now()*1000+(tick++);
+  if(db){
+    try{return await idbAdd(meta,buf)}
+    catch(e){if(e&&e.name==='QuotaExceededError')throw e}
+  }
+  memUsed=true;meta.id=memN--;mem.push({meta:meta,buf:buf});return meta.id;
+}
+function dbDel(id){
+  if(typeof id!=='number')return Promise.resolve();
+  if(id<0){mem=mem.filter(function(x){return x.meta.id!==id});return Promise.resolve()}
+  return new Promise(function(res,rej){
+    var t=db.transaction(['items','data'],'readwrite');
+    t.objectStore('items').delete(id);t.objectStore('data').delete(id);
+    t.oncomplete=function(){res()};t.onerror=function(){rej(t.error)};
+  });
+}
+async function dbAll(kind){
+  var l=[];
+  if(db){
+    try{
+      l=await new Promise(function(res,rej){
+        var r=db.transaction('items').objectStore('items').index('kind').getAll(kind);
+        r.onsuccess=function(){res(r.result)};r.onerror=function(){rej(r.error)};
+      });
+    }catch(e){l=[]}
+  }
+  mem.forEach(function(m){if(m.meta.kind===kind)l.push(m.meta)});
+  l.sort(function(a,b){return (a.t||0)-(b.t||0)});
+  if(kind==='song'&&S.songOrder&&S.songOrder.length){
+    var pos={};S.songOrder.forEach(function(id,i){pos[id]=i});
+    l.sort(function(a,b){
+      var pa=(a.id in pos)?pos[a.id]:1e9+(a.t||0),pb=(b.id in pos)?pos[b.id]:1e9+(b.t||0);return pa<pb?-1:pa>pb?1:0;
+    });
+  }
+  return libItems(kind).concat(l);
+}
+function dbBuf(id){
+  if(id<0){var m=mem.filter(function(x){return x.meta.id===id})[0];return Promise.resolve(m?m.buf:null)}
+  return new Promise(function(res,rej){
+    var r=db.transaction('data').objectStore('data').get(id);
+    r.onsuccess=function(){res(r.result?r.result.buf:null)};r.onerror=function(){rej(r.error)};
+  });
+}
+async function dbBlob(rec){
+  var b=await dbBuf(rec.id);if(!b)throw new Error('The saved file is missing');
+  return new Blob([b],{type:rec.type||'application/octet-stream'});
+}
+
+/* ---------- adding files ---------- */
+function loadImage(url){
+  return new Promise(function(ok,no){
+    var i=new Image();i.onload=function(){ok(i)};
+    i.onerror=function(){no(new Error('This is not a picture the browser can open'))};i.src=url;
+  });
+}
+function scaled(img,max,q){
+  var w=img.naturalWidth,h=img.naturalHeight,k=Math.min(1,max/Math.max(w,h));
+  var c=document.createElement('canvas');c.width=Math.max(1,Math.round(w*k));c.height=Math.max(1,Math.round(h*k));
+  c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+  return new Promise(function(r){c.toBlob(r,'image/jpeg',q)});
+}
+async function prepPhoto(file){
+  var img=await loadImage(await readURL(file));
+  var big=await scaled(img,1600,0.86),small=await scaled(img,260,0.8);
+  if(!big||!small)throw new Error('The picture could not be converted');
+  return {buf:await readBuf(big),thumb:await readBuf(small)};
+}
+var adding=false;
+async function addFiles(kind,files){
+  if(!files.length||adding)return;
+  adding=true;var ok=0,bad=0,full=false,why='';
+  for(var i=0;i<files.length;i++){
+    var f=files[i];
+    toast('Adding '+(i+1)+' of '+files.length+'…',60000);
+    try{
+      var meta={kind:kind,name:(f.name||'Untitled').replace(/\.[^.]+$/,'')},buf;
+      if(kind==='photo'){var p=await prepPhoto(f);buf=p.buf;meta.thumb=p.thumb;meta.type='image/jpeg'}
+      else{
+        buf=await readBuf(f);
+        var ty=mimeOf(f);
+        if(!/^audio\//.test(ty))ty=/\.m4a$/i.test(f.name||'')?'audio/mp4':'audio/mpeg';
+        meta.type=ty;
+      }
+      await dbAdd(meta,buf);ok++;
+    }catch(e){
+      bad++;why=errText(e);
+      if(e&&e.name==='QuotaExceededError'){full=true;break}
+    }
+  }
+  adding=false;
+  await render();
+  if(full)toast('This device is out of storage space. Remove something and try again.',7000);
+  else if(bad)toast(ok+' added, '+bad+' failed. '+why,9000);
+  else if(memUsed&&!db)toast(ok+' added, but this browser will not keep them after the page closes.',8000);
+  else toast(ok+(ok===1?' file':' files')+' added.');
+}
+
+/* ---------- setup screen ---------- */
+async function render(){
+  var out=[];
+  for(var s=0;s<SECTIONS.length;s++){
+    var sec=SECTIONS[s];
+    var items=await dbAll(sec.kind);var body='';
+    var libN=items.filter(function(r){return r.lib}).length;
+    var up=items.filter(function(r){return !r.lib});
+    if(!items.length){body='<p class="empty">Nothing added yet.</p>'}
+    else if(sec.kind==='photo'){
+      if(libN)body+='<p class="empty">'+libN+(libN===1?' photo is':' photos are')+' loaded from the media/photos folder.</p>';
+      if(up.length){
+        var urls=await Promise.all(up.map(function(r){
+          return r.thumb?bufDataURL(r.thumb,'image/jpeg').catch(function(){return ''}):Promise.resolve('');
+        }));
+        body+='<div class="grid">'+up.map(function(r,i){
+          return '<figure data-id="'+r.id+'"><img src="'+urls[i]+'" alt=""><button class="ib" data-act="del" aria-label="Remove photo">'+ic('x',14)+'</button></figure>';
+        }).join('')+'</div>';
+      }
+    }else{
+      var ui=-1;
+      body='<ul class="list">'+items.map(function(r){
+        var mv='',del='';
+        if(!r.lib){
+          ui++;
+          if(sec.kind==='song')mv='<button class="ib" data-act="up" '+(ui===0?'disabled':'')+' aria-label="Move up">'+ic('up',16)+'</button>'+
+            '<button class="ib" data-act="down" '+(ui===up.length-1?'disabled':'')+' aria-label="Move down">'+ic('down',16)+'</button>';
+          del='<button class="ib" data-act="del" aria-label="Remove">'+ic('x',14)+'</button>';
+        }
+        return '<li class="row" data-id="'+r.id+'"><span class="nm">'+esc(r.name)+'</span>'+(r.lib?'<span class="count">folder</span>':'')+
+          '<button class="ib" data-act="prev" aria-label="Preview">'+ic('play',16)+'</button>'+mv+del+'</li>';
+      }).join('')+'</ul>';
+    }
+    var extra='';
+    if(sec.kind==='rain'){
+      extra='<label class="field">Rain volume <input type="range" id="rainVol" min="0" max="100" value="'+Math.round(S.rain*100)+'"></label>';
+    }
+    out.push('<section class="blk" data-kind="'+sec.kind+'"><h3>'+sec.title+' <span class="count">'+items.length+'</span></h3>'+
+      '<p class="help">'+sec.help+'</p>'+
+      '<span class="btn"><input type="file" multiple accept="'+sec.accept+'" aria-label="'+sec.btn+'">'+sec.btn+'</span>'+
+      (up.length?' <button class="linkbtn" data-act="clear">Remove all I added</button>':'')+
+      body+extra+'</section>');
+  }
+  $('#sections').innerHTML=out.join('');
+  var rv=$('#rainVol');
+  if(rv)rv.addEventListener('input',function(){
+    S.rain=rv.value/100;saveS();if(pv&&pv._kind==='rain')pv.volume=S.rain;
+  });
+}
+var pv=null,pvBtn=null;
+function stopPreview(){
+  if(pv){try{pv.pause()}catch(e){}pv.onerror=null;URL.revokeObjectURL(pv._u)}
+  if(pvBtn)pvBtn.innerHTML=ic('play',16);
+  pv=null;pvBtn=null;
+}
+async function preview(btn,id,kind){
+  if(pvBtn===btn){stopPreview();return}
+  stopPreview();
+  var rec=(await dbAll(kind)).filter(function(r){return r.id===id})[0];if(!rec)return;
+  if(rec.url){
+    var la=new Audio();la._kind=kind;la.volume=kind==='rain'?S.rain:1;la.onended=stopPreview;
+    la.onerror=function(){if(pv===la){toast('That file could not be played. Check its name and format.',6000);stopPreview()}};
+    pv=la;pvBtn=btn;btn.innerHTML=ic('stop',16);la.src=rec.url;la.play().catch(function(){});return;
+  }
+  var blob;try{blob=await dbBlob(rec)}catch(e){toast('Could not read that file. '+errText(e));return}
+  var a=new Audio(),tried=false;
+  a._u=URL.createObjectURL(blob);a._kind=kind;a.volume=kind==='rain'?S.rain:1;
+  a.onended=stopPreview;
+  a.onerror=function(){
+    if(pv!==a)return;
+    if(!tried){tried=true;readURL(blob).then(function(d){if(pv===a){a.src=d;a.play().catch(function(){})}})}
+    else{toast('That file could not be played. Try an MP3 or M4A.');stopPreview()}
+  };
+  pv=a;pvBtn=btn;btn.innerHTML=ic('stop',16);
+  a.src=a._u;
+  a.play().catch(function(err){if(err&&err.name==='NotAllowedError'){toast('The browser blocked playback.');stopPreview()}});
+}
+$('#setup').addEventListener('click',async function(e){
+  var b=e.target.closest('[data-act]');if(!b)return;
+  var act=b.dataset.act,host=b.closest('[data-id]'),sec=b.closest('[data-kind]');if(!sec)return;
+  var kind=sec.dataset.kind,rawId=host?host.dataset.id:null,id=(rawId!==null&&/^-?\d+$/.test(rawId))?Number(rawId):rawId;
+  try{
+    if(act==='del'){stopPreview();await dbDel(id);await render()}
+    else if(act==='prev'){preview(b,id,kind)}
+    else if(act==='up'||act==='down'){
+      var list=(await dbAll('song')).filter(function(r){return !r.lib}),ids=list.map(function(r){return r.id});
+      var i=ids.indexOf(id),j=i+(act==='up'?-1:1);
+      if(i<0||j<0||j>=ids.length)return;
+      var t=ids[i];ids[i]=ids[j];ids[j]=t;S.songOrder=ids;saveS();await render();
+    }else if(act==='clear'){
+      if(!confirm('Remove everything in this list?'))return;
+      stopPreview();var all=(await dbAll(kind)).filter(function(r){return !r.lib});
+      for(var k=0;k<all.length;k++)await dbDel(all[k].id);
+      await render();
+    }
+  }catch(err){toast('That did not work. '+errText(err),7000)}
+});
+$('#setup').addEventListener('change',function(e){
+  var inp=e.target;if(!inp.matches||!inp.matches('input[type=file]'))return;
+  var kind=inp.closest('[data-kind]').dataset.kind;
+  var files=Array.prototype.slice.call(inp.files);
+  addFiles(kind,files).then(function(){try{inp.value=''}catch(e){}});
+});
+$('#secs').addEventListener('change',function(){S.secs=Number($('#secs').value);saveS()});
+$('#shuf').addEventListener('change',function(){S.shuffle=$('#shuf').checked;saveS()});
+$('#showq').addEventListener('change',function(){S.quotes=$('#showq').checked;saveS()});
+$('#customq').addEventListener('input',function(){S.custom=$('#customq').value;saveS()});
+async function openSetup(){
+  $('#secs').value=String(S.secs);$('#shuf').checked=!!S.shuffle;
+  $('#showq').checked=S.quotes!==false;$('#customq').value=S.custom||'';
+  $('#dbnote').hidden=!!db;
+  await render();$('#setup').hidden=false;$('#setup').scrollTop=0;
+}
+function closeSetup(){stopPreview();$('#setup').hidden=true}
+$('#btnDone').addEventListener('click',closeSetup);
+
+/* ---------- hold-to-open gear ---------- */
+(function(){
+  var g=$('#gear'),t=null;
+  g.addEventListener('pointerdown',function(){
+    g.classList.add('holding');
+    t=setTimeout(function(){g.classList.remove('holding');openSetup()},900);
+  });
+  ['pointerup','pointerleave','pointercancel'].forEach(function(ev){
+    g.addEventListener(ev,function(){clearTimeout(t);g.classList.remove('holding')});
+  });
+  g.addEventListener('contextmenu',function(e){e.preventDefault()});
+  g.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();openSetup()}});
+})();
+
+/* ---------- audio engine ---------- */
+var ctx=null,els={},gains={};
+var sess={on:false,armed:false,paused:false,phase:'',songs:[],clips:[],photos:[],rains:[],order:[],idx:0,fails:0,
+  set:[],si:-1,timer:null,urls:{},cur:{},token:0,shown:false};
+function initAudio(){
+  if(ctx||els.song)return;
+  var AC=window.AudioContext||window.webkitAudioContext;
+  try{ctx=AC?new AC():null}catch(e){ctx=null}
+  ['clip','song','rain'].forEach(function(k){
+    var el=new Audio();el.preload='auto';el.setAttribute('playsinline','');els[k]=el;gains[k]=null;
+    if(ctx&&location.protocol!=='file:'){
+      try{
+        var src=ctx.createMediaElementSource(el),g=ctx.createGain();
+        src.connect(g);g.connect(ctx.destination);gains[k]=g;
+      }catch(e){gains[k]=null}
+    }
+  });
+  els.rain.loop=true;
+  els.clip.addEventListener('ended',function(){if(sess.on&&sess.phase==='clip')beginSong()});
+  els.song.addEventListener('ended',function(){if(sess.on&&sess.phase==='song')songDone()});
+  els.clip.addEventListener('error',function(){if(sess.on&&sess.phase==='clip'&&!audioFallback('clip'))beginSong()});
+  els.song.addEventListener('error',function(){if(sess.on&&sess.phase==='song'&&!audioFallback('song'))songFailed()});
+  els.rain.addEventListener('error',function(){
+    if(sess.on&&sess.cur.rain&&!audioFallback('rain'))toast('The rain sound could not be played.',6000);
+  });
+}
+function setGain(k,v,tc){
+  var g=gains[k];
+  if(g&&ctx){
+    try{g.gain.cancelScheduledValues(ctx.currentTime);g.gain.setTargetAtTime(v,ctx.currentTime,tc||0.05)}
+    catch(e){g.gain.value=v}
+  }else els[k].volume=v;
+}
+async function loadAudio(k,rec){
+  if(rec.url){
+    if(sess.urls[k]){URL.revokeObjectURL(sess.urls[k]);delete sess.urls[k]}
+    sess.cur[k]={blob:null,tried:true};els[k].src=rec.url;return;
+  }
+  var blob=await dbBlob(rec);
+  if(sess.urls[k])URL.revokeObjectURL(sess.urls[k]);
+  sess.urls[k]=URL.createObjectURL(blob);
+  sess.cur[k]={blob:blob,tried:false};
+  els[k].src=sess.urls[k];
+}
+function audioFallback(k){
+  var c=sess.cur[k];if(!c||c.tried)return false;
+  c.tried=true;
+  readURL(c.blob).then(function(d){
+    if(!sess.on||sess.cur[k]!==c)return;
+    els[k].src=d;
+    if(!sess.paused&&(k==='rain'||sess.phase===k))playEl(k);
+  }).catch(function(){
+    if(k==='song')songFailed();else if(k==='clip')beginSong();
+  });
+  return true;
+}
+function playEl(k){var p=els[k].play();if(p&&p.catch)p.catch(function(){});return p}
+
+/* ---------- slideshow ---------- */
+var slides=[$('#slideA'),$('#slideB')],curSlide=1;
+function clearSlides(){
+  slides.forEach(function(s){
+    s.classList.remove('on');
+    s.querySelector('img').removeAttribute('src');s.querySelector('.bg').style.backgroundImage='';
+  });
+}
+function showNextSlide(tries){
+  tries=tries||0;
+  if(!sess.set.length||tries>sess.set.length)return;
+  sess.si=(sess.si+1)%sess.set.length;
+  var rec=sess.set[sess.si];
+  if(!rec||!rec.du){showNextSlide(tries+1);return}
+  var old=slides[curSlide],nxt=slides[curSlide^1];
+  var img=nxt.querySelector('img');
+  img.onload=function(){
+    nxt.style.setProperty('--drift',(S.secs+4)+'s');
+    nxt.classList.remove('on');void nxt.offsetWidth;
+    nxt.classList.add('on');
+    old.classList.remove('on');
+    curSlide^=1;sess.shown=true;
+  };
+  img.onerror=function(){rec.du=null;showNextSlide(tries+1)};
+  nxt.querySelector('.bg').style.backgroundImage='url("'+rec.du+'")';
+  img.src=rec.du;
+}
+async function loadSetAndShow(tok){
+  stopSlideTimer();
+  var set=sess.set;
+  for(var i=0;i<set.length;i++){
+    if(set[i].url){set[i].du=set[i].url}
+    else{try{set[i].du=await bufDataURL(await dbBuf(set[i].id),set[i].type||'image/jpeg')}catch(e){set[i].du=null}}
+    if(tok!==sess.token||!sess.on)return;
+    if(i===0)showNextSlide();
+  }
+  if(!sess.shown)showNextSlide();
+  if(!sess.paused)startSlideTimer();
+}
+function startSlideTimer(){
+  stopSlideTimer();
+  if(sess.set.length>1)sess.timer=setInterval(function(){showNextSlide()},S.secs*1000);
+}
+function stopSlideTimer(){if(sess.timer){clearInterval(sess.timer);sess.timer=null}}
+
+/* ---------- quotes ---------- */
+var QUOTES=["I’d choose you again in every lifetime.","Home is wherever you are.","Through every storm, still you.","Some souls recognize each other before they ever speak.","Growing old with you is the best thing I ever planned.","Love isn’t only the fire at the start. It’s the light that stays on for decades.","You are my always.","Hand in hand, gray hair and all.","Loyalty is choosing each other again and again, on every ordinary day.","Every year with you is my favorite year.","I found my person, and I’m never letting go.","The rain will fade, but you and I will stay.","Two hearts, one long, slow, beautiful story.","In all the world, my soul knew yours.","Real love doesn’t fade with time. It deepens.","Let’s grow old and stubborn and wonderful together.","You are my heart’s steady place.","Whatever comes, we face it side by side.","Some love stories never end. They only get sweeter.","You’ve been my soulmate since before I knew what the word meant.","Every wrinkle is proof that we’ve laughed together.","I promise to be your safe place for all the years ahead.","Love that lasts is built one quiet day at a time.","No matter where the day takes me, my heart comes home to you.","Together is my favorite place to be.","I will be right here beside you for as long as I live.","Our love is older than the rain, and it will outlast it too.","Every road I ever took led me to you.","Still choosing you. Always will.","When the years have taken everything else, I’ll still be holding your hand."];
+var qOrder=[],qi=0,qTimer=null,qFade=null;
+function quotePool(){
+  var a=QUOTES.slice();
+  String(S.custom||'').split('\n').forEach(function(l){l=l.trim();if(l)a.push(l)});
+  return a;
+}
+function nextQuote(){
+  var pool=quotePool();if(!pool.length)return;
+  if(qi>=qOrder.length||qOrder.length!==pool.length){qOrder=shuffle(pool.map(function(_,i){return i}));qi=0}
+  var q=$('#quote');q.classList.remove('on');clearTimeout(qFade);
+  qFade=setTimeout(function(){
+    if(!sess.on||sess.phase!=='song')return;
+    $('#quoteText').textContent=pool[qOrder[qi++]];q.classList.add('on');
+  },900);
+}
+function startQuotes(){stopQuotes();if(S.quotes===false)return;nextQuote();qTimer=setInterval(nextQuote,14000)}
+function pauseQuotes(){clearInterval(qTimer);qTimer=null}
+function resumeQuotes(){if(S.quotes!==false&&!qTimer)qTimer=setInterval(nextQuote,14000)}
+function stopQuotes(){pauseQuotes();clearTimeout(qFade);$('#quote').classList.remove('on')}
+
+/* ---------- session flow ---------- */
+function setTitle(t){
+  $('#nowTitle').textContent=t||'';
+  try{if('mediaSession' in navigator&&window.MediaMetadata)navigator.mediaSession.metadata=new MediaMetadata({title:t||'Beverly’s Rain',artist:'Beverly’s Rain'})}catch(e){}
+}
+function newOrder(){
+  var o=sess.songs.map(function(_,i){return i});
+  return S.shuffle?shuffle(o):o;
+}
+async function playNext(){
+  if(!sess.on)return;
+  var tok=++sess.token;
+  els.clip.pause();els.song.pause();
+  sess.phase='clip';stopQuotes();sess.shown=false;
+  sess.photos.forEach(function(r){r.du=null});
+  sess.set=shuffle(sess.photos.slice()).slice(0,MAX);sess.si=-1;
+  loadSetAndShow(tok);
+  var clip=sess.clips.length?pick(sess.clips):null;
+  if(!clip){beginSong();return}
+  setTitle('');
+  try{await loadAudio('clip',clip)}catch(e){if(tok===sess.token&&sess.on)beginSong();return}
+  if(!sess.on||tok!==sess.token||sess.phase!=='clip')return;
+  setGain('clip',1,0.01);
+  if(!sess.paused)playEl('clip');
+}
+async function beginSong(){
+  if(!sess.on)return;
+  if(!sess.songs.length){sess.phase='idle';setTitle('');return}
+  var tok=sess.token;
+  var rec=sess.songs[sess.order[sess.idx%sess.order.length]];
+  sess.phase='song';
+  setTitle(rec.name);startQuotes();
+  try{await loadAudio('song',rec)}catch(e){if(sess.on&&tok===sess.token)songFailed();return}
+  if(!sess.on||tok!==sess.token||sess.phase!=='song')return;
+  setGain('song',1,0.01);
+  if(!sess.paused){
+    var p=els.song.play();
+    if(p&&p.catch)p.catch(function(err){if(err&&err.name==='NotAllowedError'){toast('Tap Play to start the music.',6000);return}});
+  }
+}
+function advance(){
+  sess.idx++;
+  if(sess.songs.length&&sess.idx%sess.order.length===0&&S.shuffle)sess.order=newOrder();
+  playNext();
+}
+function songDone(){sess.fails=0;advance()}
+function songFailed(){
+  sess.fails++;
+  if(sess.fails>=Math.max(1,sess.songs.length)){toast('The songs could not be played. Check them in Setup.',8000);stopSession();return}
+  advance();
+}
+async function startSession(){
+  var lists=await Promise.all(['song','clip','photo','rain'].map(dbAll));
+  if(!sess.armed)return;
+  sess.armed=false;
+  if(!lists[0].length&&!lists[1].length&&!lists[2].length&&!lists[3].length){
+    ['clip','song','rain'].forEach(function(k){els[k].pause()});
+    openSetup();return;
+  }
+  sess.songs=lists[0];sess.clips=lists[1];sess.photos=lists[2];sess.rains=lists[3];
+  sess.on=true;sess.paused=false;sess.idx=0;sess.fails=0;sess.phase='';sess.order=newOrder();
+  $('#home').hidden=true;$('#stage').hidden=false;
+  clearSlides();setPauseUI();showControls();
+  requestWake();
+  if(sess.rains.length){
+    try{
+      await loadAudio('rain',pick(sess.rains));
+      if(gains.rain)gains.rain.gain.value=0;
+      setGain('rain',S.rain,0.9);
+      if(sess.on&&!sess.paused)playEl('rain');
+    }catch(e){toast('The rain sound could not be loaded.',6000)}
+  }else els.rain.pause();
+  try{
+    if('mediaSession' in navigator){
+      navigator.mediaSession.setActionHandler('play',function(){if(sess.paused)togglePause()});
+      navigator.mediaSession.setActionHandler('pause',function(){if(!sess.paused)togglePause()});
+      navigator.mediaSession.setActionHandler('nexttrack',nextSong);
+    }
+  }catch(e){}
+  playNext();
+}
+function stopSession(){
+  sess.on=false;sess.armed=false;sess.phase='';sess.token++;stopSlideTimer();stopQuotes();
+  ['clip','song','rain'].forEach(function(k){try{els[k].pause()}catch(e){}});
+  Object.keys(sess.urls).forEach(function(k){URL.revokeObjectURL(sess.urls[k])});sess.urls={};sess.cur={};
+  sess.photos.forEach(function(r){r.du=null});
+  clearSlides();releaseWake();
+  $('#stage').hidden=true;$('#home').hidden=false;
+  $('#controls').classList.remove('show');clearTimeout(ctlT);
+}
+function togglePause(){
+  if(!sess.on)return;
+  if(!sess.paused){
+    sess.paused=true;
+    ['clip','song','rain'].forEach(function(k){try{els[k].pause()}catch(e){}});
+    stopSlideTimer();pauseQuotes();
+  }else{
+    sess.paused=false;
+    if(ctx&&ctx.state!=='running')ctx.resume().catch(function(){});
+    if(sess.phase==='clip'&&sess.cur.clip)playEl('clip');
+    if(sess.phase==='song'&&sess.cur.song)playEl('song');
+    if(sess.rains.length&&sess.cur.rain)playEl('rain');
+    startSlideTimer();
+    if(sess.phase==='song')resumeQuotes();
+  }
+  setPauseUI();showControls();
+}
+function nextSong(){
+  if(!sess.on)return;
+  if(sess.paused){sess.paused=false;if(sess.rains.length&&sess.cur.rain)playEl('rain');setPauseUI()}
+  advance();showControls();
+}
+function setPauseUI(){
+  $('#pauseDisc').innerHTML='<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">'+(sess.paused?PATHS.play:PATHS.pause)+'</svg>';
+  $('#pauseLbl').textContent=sess.paused?'Play':'Pause';
+}
+
+/* ---------- controls overlay ---------- */
+var ctlT=null;
+function showControls(){
+  var c=$('#controls');c.classList.add('show');clearTimeout(ctlT);
+  ctlT=setTimeout(function(){if(!sess.paused)c.classList.remove('show')},5000);
+}
+$('#stage').addEventListener('click',function(){
+  var c=$('#controls');
+  if(c.classList.contains('show')&&!sess.paused){c.classList.remove('show');clearTimeout(ctlT)}else showControls();
+});
+function ctl(fn){return function(e){e.stopPropagation();fn()}}
+$('#btnPause').addEventListener('click',ctl(togglePause));
+$('#btnNext').addEventListener('click',ctl(nextSong));
+$('#btnStop').addEventListener('click',ctl(stopSession));
+
+/* ---------- start button (audio must be unlocked inside this tap) ---------- */
+$('#start').addEventListener('click',function(){
+  initAudio();
+  if(ctx&&ctx.state!=='running')ctx.resume().catch(function(){});
+  sess.cur={};
+  ['clip','song','rain'].forEach(function(k){els[k].src=SILENT;playEl(k)});
+  sess.armed=true;
+  startSession();
+});
+
+/* ---------- keep the screen awake ---------- */
+var wl=null;
+async function requestWake(){
+  try{if('wakeLock' in navigator){wl=await navigator.wakeLock.request('screen');wl.addEventListener('release',function(){wl=null})}}catch(e){}
+}
+function releaseWake(){try{if(wl)wl.release()}catch(e){}wl=null}
+document.addEventListener('visibilitychange',function(){
+  if(document.visibilityState==='visible'&&sess.on){
+    if(!wl)requestWake();
+    if(ctx&&ctx.state!=='running'&&!sess.paused)ctx.resume().catch(function(){});
+  }
+});
+
+/* ---------- decoration ---------- */
+function makeRain(el,n){
+  var h='';
+  for(var i=0;i<n;i++){
+    h+='<i style="left:'+(Math.random()*100).toFixed(1)+'%;height:'+(40+Math.random()*90).toFixed(0)+
+       'px;animation-duration:'+(1.5+Math.random()*1.8).toFixed(2)+'s;animation-delay:-'+(Math.random()*6).toFixed(2)+
+       's;opacity:'+(0.25+Math.random()*0.6).toFixed(2)+'"></i>';
+  }
+  el.innerHTML=h;
+}
+function touchIcon(){
+  try{
+    var c=document.createElement('canvas');c.width=c.height=180;var x=c.getContext('2d');
+    var g=x.createLinearGradient(0,0,0,180);g.addColorStop(0,'#1b2a44');g.addColorStop(1,'#0c1320');
+    x.fillStyle=g;x.fillRect(0,0,180,180);
+    x.fillStyle='#f0b25e';x.beginPath();x.moveTo(90,34);
+    x.bezierCurveTo(90,34,130,86,130,112);x.arc(90,112,40,0,Math.PI,false);
+    x.bezierCurveTo(50,86,90,34,90,34);x.fill();
+    var l=document.createElement('link');l.rel='apple-touch-icon';l.href=c.toDataURL('image/png');document.head.appendChild(l);
+  }catch(e){}
+}
+
+/* ---------- init ---------- */
+(async function(){
+  makeRain($('#home .rain'),26);makeRain($('#stage .rain'),18);touchIcon();
+  await openDB();
+  try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
+  try{
+    var total=0;
+    for(var i=0;i<KINDS.length;i++)total+=(await dbAll(KINDS[i])).length;
+    if(!total)openSetup();
+  }catch(e){}
+})();
+})();
+</script>
+</body>
+</html>

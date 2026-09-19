@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Build library.js</title>
+<style>
+body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:680px;margin:32px auto;padding:0 20px;line-height:1.5;color:#1c2733}
+button,label.b{display:inline-block;padding:12px 22px;border-radius:999px;border:0;background:#d99a3a;color:#2a1a05;font:600 1rem inherit;cursor:pointer}
+textarea{width:100%;height:320px;font:13px ui-monospace,Menlo,Consolas,monospace;margin-top:14px}
+input[type=file]{display:none}.m{color:#5b6b7c}
+</style></head><body>
+<h1>Build library.js</h1>
+<p>1. Put your files in the <b>media</b> folders (photos, songs, clips, rain).<br>
+2. Click the button and choose the whole <b>BeverlysRain</b> folder. Your files are not uploaded anywhere.<br>
+3. Save the result as <b>library.js</b> inside the BeverlysRain folder, replacing the old one.</p>
+<label class="b">Choose the BeverlysRain folder<input id="pick" type="file" webkitdirectory multiple></label>
+<p class="m" id="sum"></p>
+<div id="act" hidden><button id="dl">Download library.js</button> <button id="cp">Copy</button></div>
+<textarea id="out" readonly hidden></textarea>
+<script>
+var KEYS={photos:/^media\/photos\/[^\/]+\.(jpe?g|png|gif|webp|heic)$/i,songs:/^media\/songs\/[^\/]+\.(mp3|m4a|aac|wav|ogg)$/i,
+  clips:/^media\/clips\/[^\/]+\.(mp3|m4a|aac|wav|ogg)$/i,rain:/^media\/rain\/[^\/]+\.(mp3|m4a|aac|wav|ogg)$/i};
+var text='';
+document.getElementById('pick').onchange=function(e){
+  var lib={photos:[],songs:[],clips:[],rain:[]};
+  Array.prototype.forEach.call(e.target.files,function(f){
+    var p=(f.webkitRelativePath||f.name).split('/').slice(1).join('/');
+    Object.keys(KEYS).forEach(function(k){if(KEYS[k].test(p))lib[k].push(p)});
+  });
+  var lines=['// Written by build-library.html.','window.BR_LIBRARY = {'],ks=Object.keys(lib);
+  ks.forEach(function(k,i){
+    lib[k].sort();
+    lines.push('  '+k+': [\n'+lib[k].map(function(p){return '    '+JSON.stringify(p)}).join(',\n')+'\n  ]'+(i<ks.length-1?',':''));
+  });
+  lines.push('};');text=lines.join('\n')+'\n';
+  document.getElementById('sum').textContent=ks.map(function(k){return lib[k].length+' '+k}).join(', ');
+  var o=document.getElementById('out');o.value=text;o.hidden=false;document.getElementById('act').hidden=false;
+};
+document.getElementById('dl').onclick=function(){
+  var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'text/javascript'}));a.download='library.js';a.click();
+};
+document.getElementById('cp').onclick=function(){
+  var o=document.getElementById('out');o.select();try{document.execCommand('copy')}catch(e){}
+  if(navigator.clipboard)navigator.clipboard.writeText(text).catch(function(){});
+};
+</script></body></html>
